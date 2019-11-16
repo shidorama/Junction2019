@@ -1,0 +1,7 @@
+pyspark
+pymongo[tls]
+pyproj
+scikit-learn
+pandas
+torch
+python-telegram-bot
