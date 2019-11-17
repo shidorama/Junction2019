@@ -5,7 +5,6 @@ import ast
 import logging
 import math
 from datetime import datetime, timedelta
-from random import random
 
 import numpy as np
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -28,14 +27,29 @@ trials = [
 
 route_ids = [912, 922, 1043, 1050, 1225, 1246]
 forecast_data = []
-for trial_id in route_ids:
-    for x in range(0, 7):
-        forecast_data.append(
-            (trial_id, 952, math.ceil(random() * 100) / 100,
-             datetime.now().replace(minute=0, hour=0, second=0, microsecond=0) + timedelta(days=x))
-        )
 
-updater = Updater(token='1062873478:AAGMRl_3cd3_zjAnI13vdQs6mUoshio-3uU', use_context=True)
+
+def load_predictions():
+    with open("daily_prediction.csv") as fp:
+        for line in fp:
+            prediction = line.split(',')
+            trial_id = int(prediction[0])
+            if trial_id in route_ids:
+                forecast_data.append(
+                    (trial_id, 952, float(prediction[3]), datetime.strptime(prediction[1], "%Y-%m-%d")))
+
+
+load_predictions()
+
+# for trial_id in route_ids:
+#     for x in range(0, 7):
+#         forecast_data.append(
+#             (trial_id, 952, math.ceil(random() * 100) / 100,
+#              datetime.now().replace(minute=0, hour=0, second=0, microsecond=0) + timedelta(days=x))
+#         )
+
+
+updater = Updater(token='', use_context=True)
 dispatcher = updater.dispatcher
 
 parks = ["Nuuksio", "Pallas-yllas"]
@@ -129,17 +143,17 @@ def get_routes_business(park_id, days):
         "busy": [],
         "free": []
     }
+    target_date = datetime.now().replace(minute=0, hour=0, second=0,
+                                         microsecond=0) + timedelta(days=days)
     for forecast_row in forecast_data:
         if forecast_row[1] == park_id \
-                and forecast_row[3] == (datetime.now().replace(minute=0, hour=0, second=0,
-                                                                                    microsecond=0) + timedelta(
-                days=days)):
+                and forecast_row[3] == target_date:
             load = forecast_row[2]
             if load > 0.7:
                 routes["avoid"].append(forecast_row)
             elif load > 0.5:
                 routes["busy"].append(forecast_row)
-            elif load > 0.3:
+            else:
                 routes["free"].append(forecast_row)
 
     return routes
@@ -154,7 +168,7 @@ def get_forecast_for(park_id, days):
     if len(routes["busy"]) > 0:
         keyboard[0].append(InlineKeyboardButton("Busy",
                                                 callback_data='{"routes": "busy", "days": %s, "park_id": %s}' % (
-                                                days, park_id)))
+                                                    days, park_id)))
     if len(routes["free"]) > 0:
         keyboard[0].append(InlineKeyboardButton("Free",
                                                 callback_data='{"routes": "free", "days": %s, "park_id": %s}' % (
@@ -170,14 +184,15 @@ def get_forecast_for(park_id, days):
 def return_park_state_menu(update: Update, context: CallbackContext):
     context.bot.send_message(update.effective_chat.id, parse_mode="Markdown", text=get_current_park_state(0))
 
+
 def get_routes_buttons(routes, days):
-    keyboard=[]
+    keyboard = []
     for route in routes:
         route_id = route[0]
         trial = get_trial_by_id(route_id)
-        keyboard.append(InlineKeyboardButton(trial[1], callback_data="{'specific_route': %s, 'days': %s}" % (route[0], days)))
+        keyboard.append(
+            InlineKeyboardButton(trial[1], callback_data="{'specific_route': %s, 'days': %s}" % (route[0], days)))
     return InlineKeyboardMarkup([keyboard])
-
 
 
 def get_trial_by_id(route_id):

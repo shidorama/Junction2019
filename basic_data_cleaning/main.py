@@ -3,7 +3,6 @@ import pyspark
 import pymongo
 import datetime
 from json import dumps, dump
-uri = "mongodb://junction2019:OIGNWBX4uCNCvoAmtGNChfRzq3A1gxFMfTMwFr5ygOwhueUlTfUuZzuCHMz1U5uRVMmllYrdT9fW1ZE0Pqdy5Q==@junction2019.mongo.cosmos.azure.com:10255/?ssl=true&retryWrites=false&replicaSet=globaldb&maxIdleTimeMS=120000&appName=@junction2019@"
 
 """
 7/29/2018 19:00 
